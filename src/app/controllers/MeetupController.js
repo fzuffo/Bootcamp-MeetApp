@@ -1,10 +1,13 @@
 import * as Yup from 'yup';
-import { startOfHour, parseISO, isBefore, format, subHours } from 'date-fns';
+import { parseISO, isBefore } from 'date-fns';
 import Meetup from '../models/Meetup';
 
 class MeetupController {
   async index(req, res) {
-    const meetups = await Meetup.findAll();
+    const meetups = await Meetup.findAll({
+      where: { user_id: req.userId },
+      order: ['id'],
+    });
     return res.json(meetups);
   }
 
@@ -25,7 +28,6 @@ class MeetupController {
     const { title, description, location, date, banner_id } = req.body;
 
     if (isBefore(parseISO(date), new Date())) {
-      console.log(parseISO(date), new Date());
       return res
         .status(400)
         .json({ error: "You can't create a Meetup before today. " });
@@ -56,37 +58,47 @@ class MeetupController {
       });
     }
 
-    const { title, description, location, date, banner_id } = req.body;
+    // //  Verifica qual o numero do Id do usuario com o usuario autenticado
+    const meetup = await Meetup.findByPk(req.params.id);
 
-    //  Verifica qual o numero do Id do usuario com o usuario autenticado
-    const checkId = await Meetup.findAll({
-      raw: true,
-      where: { id: req.params.id },
-      attributes: ['user_id'],
-    });
-    if (checkId[0].user_id !== req.userId) {
+    const user_id = req.userId;
+
+    if (user_id !== meetup.user_id) {
       return res.status(401).json({ error: 'User not autorizathed!' });
     }
 
     //  Verifica se a data já passou
-    if (isBefore(parseISO(date), new Date())) {
-      return res
-        .status(400)
-        .json({ error: "You can't create a Meetup before today. " });
+    if (isBefore(req.body.date, new Date())) {
+      return res.status(401).json({ error: "Can't update past date." });
     }
 
-    const meetupId = await Meetup.findByPk(req.params.id);
+    if (isBefore(meetup.date, new Date())) {
+      return res.status(401).json({ error: 'This meetup is past.' });
+    }
 
-    const meetup = await meetupId.update({
-      title,
-      description,
-      location,
-      date,
-      banner_id,
-    });
+    await meetup.update(req.body);
 
     return res.json(meetup);
   }
-}
 
+  async delete(req, res) {
+    // const user_id = req.userId;
+
+    const meetup = await Meetup.findByPk(req.params.id);
+
+    //  verificar se é do proprio usuario
+    if (meetup.user_id !== req.userId) {
+      return res.status(401).json({ error: 'User not autorizathed' });
+    }
+
+    //  verificar se a data já passou **TESTAR
+    if (isBefore(meetup.date, new Date())) {
+      return res.status(401).json({ error: 'This meetup is past.' });
+    }
+
+    //  deletar do banco de dados
+    await meetup.destroy();
+    return res.json(meetup);
+  }
+}
 export default new MeetupController();
