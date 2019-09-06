@@ -3,6 +3,7 @@ import { parseISO, isBefore } from 'date-fns';
 import Meetup from '../models/Meetup';
 
 class MeetupController {
+  //  -------- index starts --------
   async index(req, res) {
     const meetups = await Meetup.findAll({
       where: { user_id: req.userId },
@@ -10,13 +11,16 @@ class MeetupController {
     });
     return res.json(meetups);
   }
+  //  -------- index ends --------
 
+  //  -------- store starts --------
   async store(req, res) {
     const schema = Yup.object().shape({
       title: Yup.string().required(),
       description: Yup.string().required(),
       location: Yup.string().required(),
       date: Yup.date().required(),
+      file_id: Yup.string().required(),
     });
 
     if (!(await schema.isValid(req.body))) {
@@ -25,7 +29,7 @@ class MeetupController {
       });
     }
 
-    const { title, description, location, date, banner_id } = req.body;
+    const { title, description, location, date, file_id } = req.body;
 
     if (isBefore(parseISO(date), new Date())) {
       return res
@@ -37,19 +41,22 @@ class MeetupController {
       title,
       description,
       location,
-      date,
+      date: parseISO(date),
       user_id: req.userId,
-      banner_id,
+      file_id,
     });
     return res.json(meetup);
   }
+  //  -------- store ends --------
 
+  //  -------- update starts --------
   async update(req, res) {
     const schema = Yup.object().shape({
       title: Yup.string(),
       description: Yup.string(),
       location: Yup.string(),
       date: Yup.date(),
+      file_id: Yup.string(),
     });
 
     if (!(await schema.isValid(req.body))) {
@@ -60,10 +67,9 @@ class MeetupController {
 
     // //  Verifica qual o numero do Id do usuario com o usuario autenticado
     const meetup = await Meetup.findByPk(req.params.id);
+    const { title, description, location, date, file_id } = req.body;
 
-    const user_id = req.userId;
-
-    if (user_id !== meetup.user_id) {
+    if (req.userId !== meetup.user_id) {
       return res.status(401).json({ error: 'User not autorizathed!' });
     }
 
@@ -76,11 +82,19 @@ class MeetupController {
       return res.status(401).json({ error: 'This meetup is past.' });
     }
 
-    await meetup.update(req.body);
+    await meetup.update({
+      title,
+      description,
+      location,
+      date: parseISO(date),
+      file_id,
+    });
 
     return res.json(meetup);
   }
+  //  -------- update ends --------
 
+  //  -------- delete starts --------
   async delete(req, res) {
     // const user_id = req.userId;
 
@@ -99,6 +113,8 @@ class MeetupController {
     //  deletar do banco de dados
     await meetup.destroy();
     return res.json(meetup);
+
+    //  -------- delete ends --------
   }
 }
 export default new MeetupController();

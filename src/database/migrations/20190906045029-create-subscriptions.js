@@ -7,19 +7,19 @@ module.exports = {
         autoIncrement: true,
         primaryKey: true,
       },
-      user_id: {
-        type: Sequelize.INTEGER,
-        references: { model: 'users', Key: 'id' },
-        onUpdate: 'CASCADE',
-        onDelete: 'CASCADE',
-        allowNull: true,
-      },
       meetup_id: {
         type: Sequelize.INTEGER,
-        references: { model: 'meetups', Key: 'id' },
+        references: { model: 'meetups', key: 'id' },
         onUpdate: 'CASCADE',
         onDelete: 'CASCADE',
-        allowNull: true,
+        allowNull: false,
+      },
+      user_id: {
+        type: Sequelize.INTEGER,
+        references: { model: 'users', key: 'id' },
+        onUpdate: 'CASCADE',
+        onDelete: 'CASCADE',
+        allowNull: false,
       },
       created_at: {
         type: Sequelize.DATE,

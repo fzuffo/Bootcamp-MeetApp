@@ -17,11 +17,16 @@ class User extends Model {
 
     this.addHook('beforeSave', async user => {
       if (user.password) {
-        user.password_hash = await bcrypt.hash(user.password, 8); //  numero da força da criptografia
+        user.password_hash = await bcrypt.hash(user.password, 8);
       }
     });
 
     return this;
+  }
+
+  static associate(models) {
+    this.hasMany(models.Meetup);
+    this.hasMany(models.Subscription);
   }
 
   checkPassword(password) {
