@@ -1,16 +1,38 @@
 import * as Yup from 'yup';
-import { parseISO, isBefore } from 'date-fns';
+import { parseISO, isBefore, endOfDay, startOfDay } from 'date-fns';
+import { Op } from 'sequelize';
 import Meetup from '../models/Meetup';
+import User from '../models/User';
 
 class MeetupController {
   //  -------- index starts --------
   async index(req, res) {
+    const { page = 1, consultDate } = req.query;
+
+    const searchDate = parseISO(consultDate);
+
     const meetups = await Meetup.findAll({
-      where: { user_id: req.userId },
+      where: {
+        date: {
+          [Op.between]: [startOfDay(searchDate), endOfDay(searchDate)],
+        },
+      },
       order: ['id'],
+      limit: 10,
+      offset: (page - 1) * 10,
+      include: [
+        {
+          model: User,
+          attributes: ['name', 'email'],
+        },
+      ],
     });
-    return res.json(meetups);
+    if (meetups !== []) {
+      return res.json(meetups);
+    }
+    return res.status(400).json({ error: 'No meetups on this day.' });
   }
+
   //  -------- index ends --------
 
   //  -------- store starts --------
@@ -65,7 +87,7 @@ class MeetupController {
       });
     }
 
-    // //  Verifica qual o numero do Id do usuario com o usuario autenticado
+    // Check if user id is same auth user.
     const meetup = await Meetup.findByPk(req.params.id);
     const { title, description, location, date, file_id } = req.body;
 
@@ -73,7 +95,7 @@ class MeetupController {
       return res.status(401).json({ error: 'User not autorizathed!' });
     }
 
-    //  Verifica se a data já passou
+    //  Check is date is past.
     if (isBefore(req.body.date, new Date())) {
       return res.status(401).json({ error: "Can't update past date." });
     }
@@ -100,17 +122,17 @@ class MeetupController {
 
     const meetup = await Meetup.findByPk(req.params.id);
 
-    //  verificar se é do proprio usuario
+    //  Check if is user is itself
     if (meetup.user_id !== req.userId) {
       return res.status(401).json({ error: 'User not autorizathed' });
     }
 
-    //  verificar se a data já passou **TESTAR
+    //  Check if date past
     if (isBefore(meetup.date, new Date())) {
       return res.status(401).json({ error: 'This meetup is past.' });
     }
 
-    //  deletar do banco de dados
+    //  Delete from database
     await meetup.destroy();
     return res.json(meetup);
 

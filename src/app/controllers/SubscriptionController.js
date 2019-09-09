@@ -1,14 +1,41 @@
 import { isBefore } from 'date-fns';
 import { Op } from 'sequelize';
+
 import Subscription from '../models/Subscription';
 import Meetup from '../models/Meetup';
 import User from '../models/User';
 
-import Mail from '../../lib/Mail';
+import SubscriptionMail from '../jobs/SubscriptionMail';
+
+import Queue from '../../lib/Queue';
 
 //  --------- subscribe class start ---------
-
 class SubscriptionController {
+  //  -------- index starts --------
+  async index(req, res) {
+    const subscriptions = await Subscription.findAll({
+      where: {
+        user_id: req.userId,
+      },
+      attributes: ['id', 'user_id', 'meetup_id'],
+      include: [
+        {
+          model: Meetup,
+          where: {
+            date: {
+              [Op.gt]: new Date(),
+            },
+          },
+        },
+      ],
+      order: [[Meetup, 'date']],
+    });
+
+    return res.json(subscriptions);
+  }
+  //  -------- index ends --------
+
+  //  -------- store starts --------
   async store(req, res) {
     const user = await User.findByPk(req.userId);
     const meetup = await Meetup.findByPk(req.params.meetupId);
@@ -57,7 +84,7 @@ class SubscriptionController {
     });
     //  -------- Create in model ends --------
 
-    //  -------- Send mail starts --------
+    //  -------- Find data for send email starts --------
     const meetupId = await Meetup.findByPk(req.params.meetupId, {
       include: [
         {
@@ -66,20 +93,33 @@ class SubscriptionController {
         },
       ],
     });
-    await Mail.sendMail({
-      to: `${meetupId.User.name} <${meetupId.User.email}>`,
-      subject: 'Novo inscrito no meetup',
-      text: 'Novo inscrito no meetup',
+
+    const subscriptions = await Subscription.findOne({
+      where: {
+        user_id: user.id,
+        meetup_id: meetup.id,
+      },
+      include: [
+        {
+          model: User,
+          attributes: ['name', 'email'],
+        },
+      ],
     });
-    //  -------- Send mail starts --------
+    //  -------- Find data for send email ends --------
+
+    //  -------- Queue send email starts --------
+    await Queue.add(SubscriptionMail.key, {
+      meetupId,
+      subscriptions,
+    });
+    //  -------- Queue send email ends --------
 
     //  -------- Return result starts --------
     return res.json(subscribed);
     //  -------- Return result ends --------
 
-    //  --------- subscribe class end ---------
-
-    //  --------- new class starts ---------
+    //  --------- store ends ---------
   }
 }
 export default new SubscriptionController();
