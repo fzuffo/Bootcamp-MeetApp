@@ -7,30 +7,57 @@ import User from '../models/User';
 class MeetupController {
   //  -------- index starts --------
   async index(req, res) {
-    const { page = 1, consultDate } = req.query;
+    // const { page = 1, consultDate } = req.query;
 
-    const searchDate = parseISO(consultDate);
+    // const searchDate = parseISO(consultDate);
+
+    // const meetups = await Meetup.findAll({
+    //   where: {
+    //     date: {
+    //       [Op.between]: [startOfDay(searchDate), endOfDay(searchDate)],
+    //     },
+    //   },
+    //   order: ['id'],
+    //   limit: 10,
+    //   offset: (page - 1) * 10,
+    //   include: [
+    //     {
+    //       model: User,
+    //       attributes: ['name', 'email'],
+    //     },
+    //   ],
+    // });
 
     const meetups = await Meetup.findAll({
-      where: {
-        date: {
-          [Op.between]: [startOfDay(searchDate), endOfDay(searchDate)],
+      where: [
+        {
+          user_id: req.userId,
         },
-      },
-      order: ['id'],
-      limit: 10,
-      offset: (page - 1) * 10,
+      ],
       include: [
         {
           model: User,
-          attributes: ['name', 'email'],
+          attributes: ['name'],
         },
       ],
     });
+    // return res.json(meetups);
+    // {
+    //   where: {
+    //     user_id: req.userId,
+    //     include: [
+    //       {
+    //         model: User,
+    //         attributes: ['name'],
+    //       },
+    //     ],
+    //   },
+    // });
+
     if (meetups !== []) {
       return res.json(meetups);
     }
-    return res.status(400).json({ error: 'No meetups on this day.' });
+    return res.status(400).json({ error: 'No meetups find.' });
   }
 
   //  -------- index ends --------
