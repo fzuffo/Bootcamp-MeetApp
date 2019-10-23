@@ -12,18 +12,17 @@ import authMiddleware from './app/middlewares/auth';
 
 const routes = new Router();
 const upload = multer(multerConfig);
-
-routes.post('/users', UserController.store);
-routes.get('/users', UserController.index);
-routes.post('/sessions', SessionController.store);
-
 routes.use(authMiddleware);
 
+routes.post('/users', UserController.store);
 routes.put('/users', UserController.update);
+
+routes.post('/sessions', SessionController.store);
 
 routes.post('/files', upload.single('file'), FileController.store);
 
 routes.get('/meetups', MeetupController.index);
+routes.get('/meetups/user', MeetupController.indexUser);
 routes.post('/meetups', MeetupController.store);
 routes.put('/meetups/:id', MeetupController.update);
 routes.delete('/meetups/:id', MeetupController.delete);

@@ -4,7 +4,6 @@ import Mail from '../../lib/Mail';
 
 class SubscriptionMail {
   get key() {
-    // retorna chave do model, sem precisar chamar o metodo
     return 'SubscriptionMail';
   }
 

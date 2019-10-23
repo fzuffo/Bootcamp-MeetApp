@@ -69,12 +69,26 @@ class SubscriptionController {
         date: meetup.date,
       },
     });
+    var checkSameTimeSubscription = [];
+    // console.log('teste-->', checkSameTime);
+    for (let index = 0; index < checkSameTime.length; index++) {
+      const elementId = checkSameTime[index].id;
 
-    if (checkSameTime.length > 0) {
+      checkSameTimeSubscription = await Subscription.findAll({
+        where: {
+          meetup_id: elementId,
+        },
+      });
+
+      console.log('elementId-->', checkSameTimeSubscription.length);
+    }
+
+    if (checkSameTimeSubscription.length > 0) {
       return res
         .status(400)
         .json({ error: 'You have other Meetup at same time.' });
     }
+
     //  -------- Check same time ends --------
 
     //  -------- Create in model starts --------

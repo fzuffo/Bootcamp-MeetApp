@@ -1,58 +1,62 @@
 import * as Yup from 'yup';
-import { parseISO, isBefore, endOfDay, startOfDay } from 'date-fns';
+import { parse, parseISO, isBefore, endOfDay, startOfDay } from 'date-fns';
 import { Op } from 'sequelize';
 import Meetup from '../models/Meetup';
 import User from '../models/User';
+import File from '../models/File';
 
 class MeetupController {
   //  -------- index starts --------
-  async index(req, res) {
-    // const { page = 1, consultDate } = req.query;
 
-    // const searchDate = parseISO(consultDate);
-
-    // const meetups = await Meetup.findAll({
-    //   where: {
-    //     date: {
-    //       [Op.between]: [startOfDay(searchDate), endOfDay(searchDate)],
-    //     },
-    //   },
-    //   order: ['id'],
-    //   limit: 10,
-    //   offset: (page - 1) * 10,
-    //   include: [
-    //     {
-    //       model: User,
-    //       attributes: ['name', 'email'],
-    //     },
-    //   ],
-    // });
-
+  async indexUser(req, res) {
     const meetups = await Meetup.findAll({
-      where: [
-        {
-          user_id: req.userId,
-        },
-      ],
+      where: {
+        user_id: req.userId,
+      },
       include: [
         {
           model: User,
-          attributes: ['name'],
+          attributes: ['name', 'email'],
+        },
+        {
+          model: File,
+          attributes: ['id', 'url', 'path'],
         },
       ],
     });
-    // return res.json(meetups);
-    // {
-    //   where: {
-    //     user_id: req.userId,
-    //     include: [
-    //       {
-    //         model: User,
-    //         attributes: ['name'],
-    //       },
-    //     ],
-    //   },
-    // });
+
+    if (meetups.length === 0) {
+      return res.status(400).json({ error: 'No meetups find.' });
+    }
+
+    return res.json(meetups);
+  }
+
+  async index(req, res) {
+    const { page = 1, date } = req.query;
+    const searchDate = Date.parse(date);
+
+    const meetups = await Meetup.findAll({
+      where: { user_id: req.userId },
+      where: {
+        date: {
+          [Op.between]: [startOfDay(searchDate), endOfDay(searchDate)],
+        },
+      },
+      order: ['id'],
+      limit: 10,
+      offset: (page - 1) * 10,
+      include: [
+        {
+          model: User,
+          attributes: ['name', 'email'],
+        },
+        {
+          model: File,
+          attributes: ['id', 'url', 'path'],
+        },
+      ],
+    });
 
     if (meetups !== []) {
       return res.json(meetups);
@@ -85,7 +89,6 @@ class MeetupController {
         .status(400)
         .json({ error: "You can't create a Meetup before today. " });
     }
-
     const meetup = await Meetup.create({
       title,
       description,
@@ -123,8 +126,10 @@ class MeetupController {
     }
 
     //  Check is date is past.
-    if (isBefore(req.body.date, new Date())) {
-      return res.status(401).json({ error: "Can't update past date." });
+    if (isBefore(parseISO(req.body.date), new Date())) {
+      return res
+        .status(401)
+        .json({ error: "You can't create a Meetup before today." });
     }
 
     if (isBefore(meetup.date, new Date())) {
