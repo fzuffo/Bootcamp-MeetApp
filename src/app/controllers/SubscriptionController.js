@@ -70,7 +70,7 @@ class SubscriptionController {
       },
     });
     var checkSameTimeSubscription = [];
-    // console.log('teste-->', checkSameTime);
+
     for (let index = 0; index < checkSameTime.length; index++) {
       const elementId = checkSameTime[index].id;
 
@@ -79,8 +79,6 @@ class SubscriptionController {
           meetup_id: elementId,
         },
       });
-
-      console.log('elementId-->', checkSameTimeSubscription.length);
     }
 
     if (checkSameTimeSubscription.length > 0) {
