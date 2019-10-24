@@ -1,5 +1,5 @@
 import * as Yup from 'yup';
-import { parse, parseISO, isBefore, endOfDay, startOfDay } from 'date-fns';
+import { parseISO, isBefore, endOfDay, startOfDay } from 'date-fns';
 import { Op } from 'sequelize';
 import Meetup from '../models/Meetup';
 import User from '../models/User';
@@ -34,7 +34,7 @@ class MeetupController {
 
   async index(req, res) {
     const { page = 1, date } = req.query;
-    const searchDate = Date.parse(date);
+    const searchDate = parseISO(date);
 
     const meetups = await Meetup.findAll({
       where: { user_id: req.userId },
@@ -150,8 +150,6 @@ class MeetupController {
 
   //  -------- delete starts --------
   async delete(req, res) {
-    // const user_id = req.userId;
-
     const meetup = await Meetup.findByPk(req.params.id);
 
     //  Check if is user is itself

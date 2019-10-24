@@ -4,6 +4,7 @@ import { Op } from 'sequelize';
 import Subscription from '../models/Subscription';
 import Meetup from '../models/Meetup';
 import User from '../models/User';
+import File from '../models/File';
 
 import SubscriptionMail from '../jobs/SubscriptionMail';
 
@@ -26,6 +27,16 @@ class SubscriptionController {
               [Op.gt]: new Date(),
             },
           },
+          include: [
+            {
+              model: File,
+              attributes: ['id', 'url', 'path'],
+            },
+          ],
+        },
+        {
+          model: User,
+          attributes: ['name'],
         },
       ],
       order: [[Meetup, 'date']],
@@ -132,6 +143,21 @@ class SubscriptionController {
     //  -------- Return result ends --------
 
     //  --------- store ends ---------
+  }
+
+  async delete(req, res) {
+    const subscription = await Subscription.findByPk(req.params.id);
+
+    if (subscription === null) {
+      return res.status(401).json({ error: 'Subscription not found' });
+    }
+
+    if (subscription.user_id !== req.userId) {
+      return res.status(401).json({ error: 'User not autorizathed' });
+    }
+
+    await subscription.destroy();
+    return res.json(subscription);
   }
 }
 export default new SubscriptionController();

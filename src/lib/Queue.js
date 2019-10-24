@@ -6,7 +6,7 @@ const jobs = [SubscriptionMail];
 
 class Queue {
   constructor() {
-    this.queues = {}; // uma fila para cada backgroud job (ex.: cancelamento, envio, recuperacao de senha)
+    this.queues = {};
 
     this.init();
   }
