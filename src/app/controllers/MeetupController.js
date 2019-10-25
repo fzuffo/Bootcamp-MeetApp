@@ -43,7 +43,8 @@ class MeetupController {
           [Op.between]: [startOfDay(searchDate), endOfDay(searchDate)],
         },
       },
-      order: ['id'],
+      order: ['date'],
+      // order: [['date', 'desc']],  syntax for sort descrescent
       limit: 10,
       offset: (page - 1) * 10,
       include: [
@@ -93,7 +94,7 @@ class MeetupController {
       title,
       description,
       location,
-      date: parseISO(date),
+      date,
       user_id: req.userId,
       file_id,
     });
