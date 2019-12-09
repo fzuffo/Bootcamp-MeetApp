@@ -9,7 +9,7 @@ Para iniciar o server execute no terminal:
 yarn dev
 yarn queue
 
-===============
+================
 
 # backend em NodeJs da aplicação @MeetApp
 
