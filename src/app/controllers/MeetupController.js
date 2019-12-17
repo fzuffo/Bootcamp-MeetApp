@@ -13,6 +13,7 @@ class MeetupController {
       where: {
         user_id: req.userId,
       },
+      order: ['date'],
       include: [
         {
           model: User,
@@ -24,7 +25,7 @@ class MeetupController {
         },
       ],
     });
-
+    // console.log('meetups', meetups);
     if (meetups.length === 0) {
       return res.status(400).json({ error: 'No meetups find.' });
     }
